@@ -46,6 +46,26 @@ public:
 	ResultSet(const ResultSet&) = delete;
 	ResultSet& operator=(const ResultSet&) = delete;
 
+	ResultSet(ResultSet&& other) noexcept {
+		if (&other == this) {
+			return;
+		}
+
+		std::swap(res, other.res);
+		std::swap(rowNum, other.rowNum);
+		std::swap(colNum, other.colNum);
+	}
+
+	ResultSet& operator=(ResultSet&& other) noexcept {
+		if (&other != this) {
+			std::swap(res, other.res);
+			std::swap(rowNum, other.rowNum);
+			std::swap(colNum, other.colNum);
+		}
+
+		return *this;
+	}
+
 	~ResultSet() {
 		if (res != nullptr) {
 			mysql_free_result(res);
@@ -76,6 +96,22 @@ public:
 	MysqlWrapper(const MysqlWrapper&) = delete;
 	MysqlWrapper& operator=(const MysqlWrapper&) = delete;
 
+	MysqlWrapper(MysqlWrapper&& other) noexcept {
+		if (&other == this) {
+			return;
+		}
+
+		std::swap(mysql, other.mysql);
+	}
+
+	MysqlWrapper& operator=(MysqlWrapper&& other) noexcept {
+		if (&other != this) {
+			std::swap(mysql, other.mysql);
+		}
+
+		return *this;
+	}
+
 	~MysqlWrapper() {
 		if (mysql != nullptr) {
 			mysql_close(mysql);
@@ -98,7 +134,7 @@ public:
 			throw std::runtime_error{ create_error_msg("mysql_store_result() failed", mysql_error(mysql)) };
 		}
 
-		return res;   
+		return res;
 	}
 };
 
