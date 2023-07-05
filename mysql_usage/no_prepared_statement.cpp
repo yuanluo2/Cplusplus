@@ -46,23 +46,6 @@ public:
 	ResultSet(const ResultSet&) = delete;
 	ResultSet& operator=(const ResultSet&) = delete;
 
-	// used for copy elision.
-	ResultSet(ResultSet&& other) noexcept {
-		if (this != &other) {
-			std::swap(this->res, other. res);
-		}
-	}
-
-	ResultSet& operator=(ResultSet&& other) noexcept {
-		if (this != &other) {
-			std::swap(this->res, other.res);
-			std::swap(this->rowNum, other.rowNum);
-			std::swap(this->colNum, other.colNum);
-		}
-
-		return *this;
-	}
-
 	~ResultSet() {
 		if (res != nullptr) {
 			mysql_free_result(res);
@@ -93,21 +76,6 @@ public:
 	MysqlWrapper(const MysqlWrapper&) = delete;
 	MysqlWrapper& operator=(const MysqlWrapper&) = delete;
 
-	// used for copy elision.
-	MysqlWrapper(MysqlWrapper&& other) noexcept {
-		if (this != &other) {
-			std::swap(this->mysql, other.mysql);
-		}
-	}
-
-	MysqlWrapper& operator=(MysqlWrapper&& other) noexcept {
-		if (this != &other) {
-			std::swap(this->mysql, other.mysql);
-		}
-
-		return *this;
-	}
-
 	~MysqlWrapper() {
 		if (mysql != nullptr) {
 			mysql_close(mysql);
@@ -122,7 +90,7 @@ public:
 		return mysql_affected_rows(mysql);
 	}
 
-	ResultSet query(const string& sql) {
+	MYSQL_RES* query(const string& sql) {
 		execute(sql);
 
 		MYSQL_RES* res = mysql_store_result(mysql);
@@ -130,7 +98,7 @@ public:
 			throw std::runtime_error{ create_error_msg("mysql_store_result() failed", mysql_error(mysql)) };
 		}
 
-		return ResultSet{ res };    // copy elision.
+		return res;   
 	}
 };
 
@@ -157,12 +125,12 @@ int main() {
 		mw.execute("INSERT INTO m_blog VALUES (51, 39, 'title', '描述信息', '正文文本', '2023-07-01 12:21:09', 1)");
 
 		// query.
-		auto res = mw.query("SELECT id, content FROM m_blog");
+		auto res = ResultSet{ mw.query("SELECT id, content FROM m_blog") };
 		auto colNum = res.getColNum();
 		MYSQL_ROW row = nullptr;
 
 		while (row = res.fetchRow()) {
-			for (unsigned int i = 0; i < colNum;++i) {
+			for (unsigned int i = 0; i < colNum; ++i) {
 				if (row[i] == nullptr) {
 					std::cout << "null value    ";
 				}
